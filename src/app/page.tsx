@@ -334,7 +334,7 @@ export default function CalculatorPage() {
               <Input
                 type="text"
                 value={displayValue}
-                // Removed readOnly prop to allow cursor visibility
+                onChange={() => {}} // Added to resolve React controlled component warning
                 className="w-full text-right text-5xl lg:text-6xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4 text-foreground"
               />
             </div>
