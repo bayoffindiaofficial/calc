@@ -286,7 +286,7 @@ export default function CalculatorPage() {
 
   return (
     <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen bg-background p-4 gap-8">
-      <div className="flex flex-col md:flex-row gap-8 items-center"> {/* Added items-center here */}
+      <div className="flex flex-col md:flex-row gap-8 items-center"> {/* Container for calculator and GST buttons */}
         <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border">
           <CardHeader className="pb-4">
             {/* Removed CardTitle as requested */}
@@ -317,7 +317,7 @@ export default function CalculatorPage() {
                         ? "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
                         : "bg-secondary text-secondary-foreground hover:bg-secondary/90 active:scale-95"
                     }
-                    ${button.label === "0" ? "col-span-2" : ""}`}
+                    ${button.label === "0" ? "" : ""} ${button.label === "DEL" || button.label === "=" ? "" : ""}`}
                   onClick={button.handler}
                 >
                   {button.label}
