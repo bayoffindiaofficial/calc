@@ -318,6 +318,7 @@ export default function CalculatorPage() {
     { label: "12% GST", handler: () => handleGSTCalculation(12) },
     { label: "18% GST", handler: () => handleGSTCalculation(18) },
     { label: "28% GST", handler: () => handleGSTCalculation(28) },
+    { label: "48% GST", handler: () => handleGSTCalculation(48) },
   ];
 
   return (
@@ -399,7 +400,10 @@ export default function CalculatorPage() {
           </ScrollArea>
         </CardContent>
       </Card>
-      <MadeWithDyad />
+      <div className="p-4 text-center">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Made By Saswata</p>
+        <MadeWithDyad />
+      </div>
     </div>
   );
 }
