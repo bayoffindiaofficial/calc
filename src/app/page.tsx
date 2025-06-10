@@ -249,7 +249,7 @@ export default function CalculatorPage() {
     };
   }, [handleDigitClick, handleDecimalClick, handleOperatorClick, handleEqualsClick, handleBackspace, handleClearClick]);
 
-  const buttons = [
+  const mainButtons = [
     { label: "MC", type: "memory", handler: handleMemoryClear },
     { label: "MR", type: "memory", handler: handleMemoryRecall },
     { label: "M+", type: "memory", handler: handleMemoryAdd },
@@ -258,11 +258,6 @@ export default function CalculatorPage() {
     { label: "CE", type: "clear", handler: handleClearEntry },
     { label: "%", type: "operator", handler: handlePercentage },
     { label: "/", type: "operator", handler: () => handleOperatorClick("/") },
-    { label: "0% GST", type: "gst", handler: () => handleGSTCalculation(0) },
-    { label: "9% GST", type: "gst", handler: () => handleGSTCalculation(9) },
-    { label: "12% GST", type: "gst", handler: () => handleGSTCalculation(12) },
-    { label: "18% GST", type: "gst", handler: () => handleGSTCalculation(18) },
-    { label: "28% GST", type: "gst", handler: () => handleGSTCalculation(28) },
     { label: "7", type: "digit", handler: () => handleDigitClick("7") },
     { label: "8", type: "digit", handler: () => handleDigitClick("8") },
     { label: "9", type: "digit", handler: () => handleDigitClick("9") },
@@ -281,49 +276,72 @@ export default function CalculatorPage() {
     { label: "=", type: "equals", handler: handleEqualsClick },
   ];
 
+  const gstButtons = [
+    { label: "0% GST", handler: () => handleGSTCalculation(0) },
+    { label: "9% GST", handler: () => handleGSTCalculation(9) },
+    { label: "12% GST", handler: () => handleGSTCalculation(12) },
+    { label: "18% GST", handler: () => handleGSTCalculation(18) },
+    { label: "28% GST", handler: () => handleGSTCalculation(28) },
+  ];
+
   return (
     <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen bg-background p-4 gap-8">
-      <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border">
-        <CardHeader className="pb-4">
-          {/* Removed CardTitle as requested */}
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center mb-2 px-2">
-            <span className="text-sm text-muted-foreground">M: {memoryValue.toFixed(2)}</span>
-            <Input
-              type="text"
-              value={displayValue}
-              readOnly
-              className="w-full text-right text-5xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4 text-foreground"
-            />
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {buttons.map((button) => (
+      <div className="flex flex-col md:flex-row gap-8"> {/* Container for calculator and GST buttons */}
+        <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border">
+          <CardHeader className="pb-4">
+            {/* Removed CardTitle as requested */}
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-between items-center mb-2 px-2">
+              <span className="text-sm text-muted-foreground">M: {memoryValue.toFixed(2)}</span>
+              <Input
+                type="text"
+                value={displayValue}
+                readOnly
+                className="w-full text-right text-5xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4 text-foreground"
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              {mainButtons.map((button) => (
+                <Button
+                  key={button.label}
+                  className={`h-20 text-2xl font-bold rounded-lg shadow-md transition-all duration-200 ease-in-out
+                    ${
+                      button.type === "operator"
+                        ? "bg-gray-800 text-white hover:bg-gray-700 active:scale-95"
+                        : button.type === "equals"
+                        ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+                        : button.type === "clear" || button.label === "DEL"
+                        ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-95"
+                        : button.type === "memory"
+                        ? "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/90 active:scale-95"
+                    }
+                    ${button.label === "0" ? "col-span-2" : ""}`}
+                  onClick={button.handler}
+                >
+                  {button.label}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="w-full max-w-[150px] shadow-xl rounded-xl border border-border flex flex-col p-4">
+          <CardTitle className="text-center text-lg font-bold text-primary-foreground bg-primary py-2 rounded-md mb-4">GST</CardTitle>
+          <div className="flex flex-col gap-3">
+            {gstButtons.map((button) => (
               <Button
                 key={button.label}
-                className={`h-20 text-2xl font-bold rounded-lg shadow-md transition-all duration-200 ease-in-out
-                  ${
-                    button.type === "operator"
-                      ? "bg-gray-800 text-white hover:bg-gray-700 active:scale-95"
-                      : button.type === "equals"
-                      ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
-                      : button.type === "clear" || button.label === "DEL"
-                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-95"
-                      : button.type === "memory"
-                      ? "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
-                      : button.type === "gst"
-                      ? "bg-green-600 text-white hover:bg-green-700 active:scale-95" // Distinct color for GST keys
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/90 active:scale-95"
-                  }
-                  ${button.label === "0" ? "col-span-2" : ""}`}
+                className="h-16 text-lg font-bold rounded-lg shadow-md transition-all duration-200 ease-in-out bg-green-600 text-white hover:bg-green-700 active:scale-95"
                 onClick={button.handler}
               >
                 {button.label}
               </Button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border lg:h-[500px] flex flex-col">
         <CardHeader className="pb-4">
