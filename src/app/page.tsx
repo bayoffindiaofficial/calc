@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function CalculatorPage() {
   const [displayValue, setDisplayValue] = useState("0");
@@ -11,6 +12,7 @@ export default function CalculatorPage() {
   const [previousValue, setPreviousValue] = useState("");
   const [operator, setOperator] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
+  const [calculationHistory, setCalculationHistory] = useState<string[]>([]);
 
   const handleDigitClick = (digit: string) => {
     if (displayValue === "Error") {
@@ -65,6 +67,8 @@ export default function CalculatorPage() {
     if (isNaN(prev) || isNaN(current)) return;
 
     let result: number;
+    let operationString = `${previousValue} ${operator} ${currentValue}`;
+
     switch (operator) {
       case "+":
         result = prev + current;
@@ -82,6 +86,7 @@ export default function CalculatorPage() {
           setPreviousValue("");
           setOperator(null);
           setWaitingForOperand(false);
+          setCalculationHistory((prevHistory) => [...prevHistory, `${operationString} = Error (Division by zero)`]);
           return;
         }
         result = prev / current;
@@ -96,6 +101,7 @@ export default function CalculatorPage() {
     setPreviousValue("");
     setOperator(null);
     setWaitingForOperand(true); // Ready for next operation or new number
+    setCalculationHistory((prevHistory) => [...prevHistory, `${operationString} = ${resultString}`]);
   };
 
   const handleOperatorClick = (nextOperator: string) => {
@@ -133,6 +139,7 @@ export default function CalculatorPage() {
     setPreviousValue("");
     setOperator(null);
     setWaitingForOperand(false);
+    setCalculationHistory([]); // Clear history on C
   };
 
   const buttons = [
@@ -144,10 +151,10 @@ export default function CalculatorPage() {
   ];
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen bg-background p-4 gap-8">
       <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border">
         <CardHeader className="pb-4">
-          <CardTitle className="text-center text-3xl font-bold text-primary-foreground bg-primary py-3 rounded-t-xl -mx-6 -mt-6 mb-4">Calculator</CardTitle>
+          {/* Removed CardTitle as requested */}
         </CardHeader>
         <CardContent>
           <Input
@@ -189,6 +196,27 @@ export default function CalculatorPage() {
               </Button>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border lg:h-[500px] flex flex-col">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-center text-2xl font-bold text-primary-foreground bg-primary py-3 rounded-t-xl -mx-6 -mt-6 mb-4">Calculation History</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow overflow-hidden">
+          <ScrollArea className="h-full w-full pr-4">
+            {calculationHistory.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">No calculations yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {calculationHistory.map((entry, index) => (
+                  <li key={index} className="text-lg text-foreground break-words">
+                    {entry}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
