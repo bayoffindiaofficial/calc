@@ -81,7 +81,7 @@ export default function CalculatorPage() {
       case "*":
         result = prev * current;
         break;
-      case "/":
+        case "/":
         if (current === 0) {
           setDisplayValue("Error");
           setCurrentValue("");
@@ -286,7 +286,7 @@ export default function CalculatorPage() {
 
   return (
     <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen bg-background p-4 gap-8">
-      <div className="flex flex-col md:flex-row gap-8"> {/* Container for calculator and GST buttons */}
+      <div className="flex flex-col md:flex-row gap-8 items-center"> {/* Added items-center here */}
         <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border">
           <CardHeader className="pb-4">
             {/* Removed CardTitle as requested */}
@@ -329,7 +329,7 @@ export default function CalculatorPage() {
 
         <Card className="w-full max-w-[200px] shadow-xl rounded-xl border border-border flex flex-col p-4">
           <CardTitle className="text-center text-lg font-bold text-primary-foreground bg-primary py-2 rounded-md mb-4">GST</CardTitle>
-          <div className="grid grid-cols-2 gap-3"> {/* Changed to grid for side-by-side */}
+          <div className="grid grid-cols-2 gap-3">
             {gstButtons.map((button) => (
               <Button
                 key={button.label}
