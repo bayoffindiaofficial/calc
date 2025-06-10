@@ -167,10 +167,10 @@ export default function CalculatorPage() {
             {buttons.map((button) => (
               <Button
                 key={button}
-                className={`h-20 text-2xl font-semibold rounded-lg shadow-md transition-all duration-200 ease-in-out
+                className={`h-20 text-2xl font-bold rounded-lg shadow-md transition-all duration-200 ease-in-out
                   ${
                     ["+", "-", "*", "/"].includes(button)
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95"
+                      ? "bg-gray-800 text-white hover:bg-gray-700 active:scale-95" // Explicitly set for visibility
                       : button === "="
                       ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-95" // Distinct color for equals
                       : button === "C"
