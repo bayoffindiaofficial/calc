@@ -13,6 +13,15 @@ export default function CalculatorPage() {
   const [waitingForOperand, setWaitingForOperand] = useState(false);
 
   const handleDigitClick = (digit: string) => {
+    if (displayValue === "Error") {
+      setDisplayValue(digit);
+      setCurrentValue(digit);
+      setWaitingForOperand(false);
+      setPreviousValue("");
+      setOperator(null);
+      return;
+    }
+
     if (waitingForOperand) {
       setCurrentValue(digit);
       setDisplayValue(digit);
@@ -27,6 +36,15 @@ export default function CalculatorPage() {
   };
 
   const handleDecimalClick = () => {
+    if (displayValue === "Error") {
+      setDisplayValue("0.");
+      setCurrentValue("0.");
+      setWaitingForOperand(false);
+      setPreviousValue("");
+      setOperator(null);
+      return;
+    }
+
     if (waitingForOperand) {
       setCurrentValue("0.");
       setDisplayValue("0.");
@@ -81,6 +99,13 @@ export default function CalculatorPage() {
   };
 
   const handleOperatorClick = (nextOperator: string) => {
+    if (displayValue === "Error") {
+      setPreviousValue(currentValue);
+      setOperator(nextOperator);
+      setWaitingForOperand(true);
+      return;
+    }
+
     if (currentValue === "" && previousValue === "") return; // No number entered yet
 
     if (previousValue === "") {
@@ -98,7 +123,7 @@ export default function CalculatorPage() {
   };
 
   const handleEqualsClick = () => {
-    if (previousValue === "" || operator === null || currentValue === "") return;
+    if (previousValue === "" || operator === null || currentValue === "" || displayValue === "Error") return;
     performCalculation();
   };
 
@@ -120,28 +145,32 @@ export default function CalculatorPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-sm shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-center text-2xl">Calculator</CardTitle>
+      <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-center text-3xl font-bold text-primary-foreground bg-primary py-3 rounded-t-xl -mx-6 -mt-6 mb-4">Calculator</CardTitle>
         </CardHeader>
         <CardContent>
           <Input
             type="text"
             value={displayValue}
             readOnly
-            className="w-full text-right text-4xl mb-4 h-16 bg-muted-foreground/10 border-border"
+            className="w-full text-right text-5xl mb-6 h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4"
           />
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-3">
             {buttons.map((button) => (
               <Button
                 key={button}
-                className={`h-16 text-xl ${
-                  ["+", "-", "*", "/", "="].includes(button)
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : button === "C"
-                    ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/90"
-                } ${button === "0" ? "col-span-2" : ""}`}
+                className={`h-20 text-2xl font-semibold rounded-lg shadow-md transition-all duration-200 ease-in-out
+                  ${
+                    ["+", "-", "*", "/"].includes(button)
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95"
+                      : button === "="
+                      ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-95" // Distinct color for equals
+                      : button === "C"
+                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-95"
+                      : "bg-secondary text-secondary-foreground hover:bg-secondary/90 active:scale-95"
+                  } 
+                  ${button === "0" ? "col-span-2" : ""}`}
                 onClick={() => {
                   if (button === "C") {
                     handleClearClick();
