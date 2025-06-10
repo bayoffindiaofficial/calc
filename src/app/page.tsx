@@ -321,8 +321,8 @@ export default function CalculatorPage() {
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen bg-background p-4 gap-8">
-      <div className="flex flex-col md:flex-row gap-8 items-center"> {/* Container for calculator and GST buttons */}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4 gap-8">
+      <div className="flex flex-col lg:flex-row items-center justify-center gap-8"> {/* Container for calculator and GST buttons */}
         <Card className="w-full max-w-sm shadow-xl rounded-xl border border-border">
           <CardHeader className="pb-4">
             {/* Removed CardTitle as requested */}
