@@ -390,7 +390,7 @@ export default function CalculatorPage() {
             ) : (
               <ul className="space-y-2">
                 {calculationHistory.map((entry, index) => (
-                  <li key={index} className="text-lg text-foreground break-words">
+                  <li key={index} className="text-lg lg:text-xl text-foreground break-words">
                     {entry}
                   </li>
                 ))}
