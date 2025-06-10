@@ -314,11 +314,11 @@ export default function CalculatorPage() {
 
   const gstButtons = [
     { label: "0% GST", handler: () => handleGSTCalculation(0) },
+    { label: "5% GST", handler: () => handleGSTCalculation(5) },
     { label: "9% GST", handler: () => handleGSTCalculation(9) },
     { label: "12% GST", handler: () => handleGSTCalculation(12) },
     { label: "18% GST", handler: () => handleGSTCalculation(18) },
     { label: "28% GST", handler: () => handleGSTCalculation(28) },
-    { label: "5% GST", handler: () => handleGSTCalculation(5) }, // Changed from 48% to 5%
   ];
 
   return (
