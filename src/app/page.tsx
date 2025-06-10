@@ -8,11 +8,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 
 export default function CalculatorPage() {
-  const [displayValue, setDisplayValue] = useState("0");
-  const [currentValue, setCurrentValue] = useState("");
-  const [previousValue, setPreviousValue] = useState("");
+  const [displayValue, setDisplayValue] = useState("0"); // This will now hold the full expression or current number
+  const [currentValue, setCurrentValue] = useState(""); // The number currently being typed
+  const [previousValue, setPreviousValue] = useState(""); // The first operand
   const [operator, setOperator] = useState<string | null>(null);
-  const [waitingForOperand, setWaitingForOperand] = useState(false);
+  const [waitingForOperand, setWaitingForOperand] = useState(false); // True after operator, waiting for second number
   const [calculationHistory, setCalculationHistory] = useState<string[]>([]);
   const [memoryValue, setMemoryValue] = useState<number>(0);
 
@@ -20,22 +20,26 @@ export default function CalculatorPage() {
     if (displayValue === "Error") {
       setDisplayValue(digit);
       setCurrentValue(digit);
-      setWaitingForOperand(false);
       setPreviousValue("");
       setOperator(null);
+      setWaitingForOperand(false);
       return;
     }
 
+    let newCurrentValue;
     if (waitingForOperand) {
-      setCurrentValue(digit);
-      setDisplayValue(digit);
+      newCurrentValue = digit;
       setWaitingForOperand(false);
     } else {
-      setCurrentValue((prev) => {
-        const newValue = prev === "0" ? digit : prev + digit;
-        setDisplayValue(newValue);
-        return newValue;
-      });
+      newCurrentValue = currentValue === "0" ? digit : currentValue + digit;
+    }
+    setCurrentValue(newCurrentValue);
+
+    // Update display to show full expression if operator is present, otherwise just the current number
+    if (operator && previousValue !== "") {
+      setDisplayValue(`${previousValue} ${operator} ${newCurrentValue}`);
+    } else {
+      setDisplayValue(newCurrentValue);
     }
   };
 
@@ -43,22 +47,29 @@ export default function CalculatorPage() {
     if (displayValue === "Error") {
       setDisplayValue("0.");
       setCurrentValue("0.");
-      setWaitingForOperand(false);
       setPreviousValue("");
       setOperator(null);
+      setWaitingForOperand(false);
       return;
     }
 
+    let newCurrentValue;
     if (waitingForOperand) {
-      setCurrentValue("0.");
-      setDisplayValue("0.");
+      newCurrentValue = "0."; // Start with "0." if waiting for operand
       setWaitingForOperand(false);
     } else if (!currentValue.includes(".")) {
-      setCurrentValue((prev) => {
-        const newValue = prev === "" ? "0." : prev + ".";
-        setDisplayValue(newValue);
-        return newValue;
-      });
+      newCurrentValue = currentValue === "" ? "0." : currentValue + ".";
+    } else {
+      // If decimal already exists and not waiting for operand, do nothing
+      return;
+    }
+    setCurrentValue(newCurrentValue);
+
+    // Construct the display string
+    if (operator && previousValue !== "") {
+      setDisplayValue(`${previousValue} ${operator} ${newCurrentValue}`);
+    } else {
+      setDisplayValue(newCurrentValue);
     }
   };
 
@@ -98,36 +109,38 @@ export default function CalculatorPage() {
     }
 
     const resultString = result.toString();
-    setDisplayValue(resultString);
-    setCurrentValue(resultString);
-    setPreviousValue("");
-    setOperator(null);
+    setDisplayValue(resultString); // Display the result
+    setCurrentValue(resultString); // Set current value to result for chaining
+    setPreviousValue(""); // Clear previous
+    setOperator(null); // Clear operator
     setWaitingForOperand(true); // Ready for next operation or new number
     setCalculationHistory((prevHistory) => [...prevHistory, `${operationString} = ${resultString}`]);
   };
 
   const handleOperatorClick = (nextOperator: string) => {
     if (displayValue === "Error") {
-      setPreviousValue(currentValue);
-      setOperator(nextOperator);
-      setWaitingForOperand(true);
+      handleClearClick(); // Reset from error state
       return;
     }
 
-    if (currentValue === "" && previousValue === "") return; // No number entered yet
-
-    if (previousValue === "") {
-      setPreviousValue(currentValue);
-      setOperator(nextOperator);
-      setWaitingForOperand(true);
-    } else if (currentValue !== "" && !waitingForOperand) {
+    // If there's a previous value, an operator, and a current value (and not waiting for operand),
+    // it means a calculation is pending. Perform it first.
+    if (previousValue && operator && currentValue && !waitingForOperand) {
       performCalculation();
-      setPreviousValue(currentValue); // Use the result as the new previous value
-      setOperator(nextOperator);
-      setWaitingForOperand(true);
-    } else {
-      setOperator(nextOperator); // Change operator if waiting for operand
+      // After performCalculation, currentValue will hold the result, and previousValue/operator will be cleared.
+      // We then use this result as the new previousValue for the next operation.
+      setPreviousValue(currentValue);
+    } else if (currentValue !== "") {
+      // If no previous operation, but a number is typed, set it as previous.
+      setPreviousValue(currentValue);
+    } else if (previousValue === "" && currentValue === "") {
+      // If nothing is typed yet, default to 0 as previous value
+      setPreviousValue("0");
     }
+
+    setOperator(nextOperator);
+    setDisplayValue(`${previousValue || currentValue || "0"} ${nextOperator}`); // Show the first operand and the new operator
+    setWaitingForOperand(true); // Now waiting for the second operand
   };
 
   const handleEqualsClick = () => {
@@ -149,9 +162,19 @@ export default function CalculatorPage() {
       handleClearClick(); // If error, clear all
       return;
     }
-    setDisplayValue("0");
-    setCurrentValue("");
-    setWaitingForOperand(false);
+    // If an operator is set, clearing entry should only clear the current number, not the previous value or operator
+    if (operator && previousValue !== "") {
+      setCurrentValue("");
+      setDisplayValue(`${previousValue} ${operator}`);
+      setWaitingForOperand(true); // Still waiting for the second operand
+    } else {
+      // If no operator or previous value, clear everything like C
+      setDisplayValue("0");
+      setCurrentValue("");
+      setPreviousValue("");
+      setOperator(null);
+      setWaitingForOperand(false);
+    }
   };
 
   const handleBackspace = () => {
@@ -159,13 +182,24 @@ export default function CalculatorPage() {
       handleClearClick();
       return;
     }
+    if (waitingForOperand) return; // Cannot backspace if waiting for new operand
+
     if (currentValue.length > 1) {
       const newValue = currentValue.slice(0, -1);
       setCurrentValue(newValue);
-      setDisplayValue(newValue);
+      if (operator && previousValue !== "") {
+        setDisplayValue(`${previousValue} ${operator} ${newValue}`);
+      } else {
+        setDisplayValue(newValue);
+      }
     } else {
       setCurrentValue("");
-      setDisplayValue("0");
+      if (operator && previousValue !== "") {
+        setDisplayValue(`${previousValue} ${operator}`);
+        setWaitingForOperand(true); // If current value becomes empty, go back to waiting for operand
+      } else {
+        setDisplayValue("0");
+      }
     }
   };
 
@@ -179,7 +213,7 @@ export default function CalculatorPage() {
       const result = value / 100;
       setDisplayValue(result.toString());
       setCurrentValue(result.toString());
-      setWaitingForOperand(true);
+      setWaitingForOperand(true); // After percentage, ready for next operation
     }
   };
 
@@ -200,7 +234,9 @@ export default function CalculatorPage() {
   const handleMemoryRecall = () => {
     setDisplayValue(memoryValue.toString());
     setCurrentValue(memoryValue.toString());
-    setWaitingForOperand(false);
+    setWaitingForOperand(false); // A number is now in display, not waiting for operand
+    setPreviousValue(""); // Clear previous value as this is a new starting point
+    setOperator(null); // Clear operator
   };
 
   const handleMemoryClear = () => {
