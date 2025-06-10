@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MadeWithDyad } from "@/components/made-with-dyad";
+
 
 export default function CalculatorPage() {
   const [displayValue, setDisplayValue] = useState("0"); // This will now hold the full expression or current number
@@ -402,7 +402,6 @@ export default function CalculatorPage() {
       </Card>
       <div className="p-4 text-center">
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Made By Saswata</p>
-        <MadeWithDyad />
       </div>
     </div>
   );
