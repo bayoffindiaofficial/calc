@@ -177,26 +177,41 @@ export default function CalculatorPage() {
       handleClearClick();
       return;
     }
-    if (waitingForOperand) return;
 
-    if (currentValue.length > 1) {
+    // Case 1: Currently typing a number (either first or second operand)
+    if (currentValue.length > 0 && !waitingForOperand) {
       const newValue = currentValue.slice(0, -1);
       setCurrentValueCallback(newValue);
       if (operator && previousValue !== "") {
         setDisplayValueCallback(`${previousValue} ${operator} ${newValue}`);
       } else {
-        setDisplayValueCallback(newValue);
-      }
-    } else {
-      setCurrentValueCallback("");
-      if (operator && previousValue !== "") {
-        setDisplayValueCallback(`${previousValue} ${operator}`);
-        setWaitingForOperandCallback(true);
-      } else {
-        setDisplayValueCallback("0");
+        setDisplayValueCallback(newValue === "" ? "0" : newValue); // If current becomes empty, show 0
       }
     }
-  }, [displayValue, currentValue, operator, previousValue, waitingForOperand, handleClearClick, setCurrentValueCallback, setDisplayValueCallback, setWaitingForOperandCallback]);
+    // Case 2: Current value is empty, and an operator exists (meaning we just deleted the last digit of the second operand)
+    else if (operator && previousValue !== "") {
+      setOperatorCallback(null); // Delete the operator
+      setCurrentValueCallback(previousValue); // Move previous value to current value to allow backspacing it
+      setDisplayValueCallback(previousValue); // Display previous value
+      setPreviousValueCallback(""); // Clear previous value
+      setWaitingForOperandCallback(false); // No longer waiting for operand, can type or backspace previous
+    }
+    // Case 3: No operator, and previousValue is the only thing left (or it's empty)
+    else if (previousValue.length > 0) {
+      const newValue = previousValue.slice(0, -1);
+      setPreviousValueCallback(newValue);
+      setCurrentValueCallback(newValue); // Keep current in sync for display
+      setDisplayValueCallback(newValue === "" ? "0" : newValue);
+    }
+    // Case 4: Everything is empty or 0, or initial state
+    else {
+      setDisplayValueCallback("0");
+      setCurrentValueCallback("");
+      setPreviousValueCallback("");
+      setOperatorCallback(null);
+      setWaitingForOperandCallback(false);
+    }
+  }, [displayValue, currentValue, operator, previousValue, waitingForOperand, handleClearClick, setCurrentValueCallback, setDisplayValueCallback, setWaitingForOperandCallback, setOperatorCallback, setPreviousValueCallback]);
 
   const handlePercentage = useCallback(() => {
     if (displayValue === "Error") {
@@ -265,7 +280,7 @@ export default function CalculatorPage() {
       } else if (key === '+' || key === '-' || key === '*' || key === '/') {
         handleOperatorClick(key);
       } else if (key === 'Enter') {
-        event.preventDefault();
+        event.preventDefault(); // Prevent default form submission or other browser behavior
         handleEqualsClick();
       } else if (key === 'Backspace') {
         event.preventDefault(); // Prevent default browser back navigation
