@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { MadeWithDyad } from "@/components/made-with-dyad";
 
 export default function CalculatorPage() {
   const [displayValue, setDisplayValue] = useState("0");
@@ -13,6 +14,7 @@ export default function CalculatorPage() {
   const [operator, setOperator] = useState<string | null>(null);
   const [waitingForOperand, setWaitingForOperand] = useState(false);
   const [calculationHistory, setCalculationHistory] = useState<string[]>([]);
+  const [memoryValue, setMemoryValue] = useState<number>(0);
 
   const handleDigitClick = (digit: string) => {
     if (displayValue === "Error") {
@@ -142,12 +144,94 @@ export default function CalculatorPage() {
     setCalculationHistory([]); // Clear history on C
   };
 
+  const handleClearEntry = () => {
+    if (displayValue === "Error") {
+      handleClearClick(); // If error, clear all
+      return;
+    }
+    setDisplayValue("0");
+    setCurrentValue("");
+    setWaitingForOperand(false);
+  };
+
+  const handleBackspace = () => {
+    if (displayValue === "Error") {
+      handleClearClick();
+      return;
+    }
+    if (currentValue.length > 1) {
+      const newValue = currentValue.slice(0, -1);
+      setCurrentValue(newValue);
+      setDisplayValue(newValue);
+    } else {
+      setCurrentValue("");
+      setDisplayValue("0");
+    }
+  };
+
+  const handlePercentage = () => {
+    if (displayValue === "Error") {
+      handleClearClick();
+      return;
+    }
+    const value = parseFloat(currentValue || displayValue);
+    if (!isNaN(value)) {
+      const result = value / 100;
+      setDisplayValue(result.toString());
+      setCurrentValue(result.toString());
+      setWaitingForOperand(true);
+    }
+  };
+
+  const handleMemoryAdd = () => {
+    const value = parseFloat(currentValue || displayValue);
+    if (!isNaN(value)) {
+      setMemoryValue((prev) => prev + value);
+    }
+  };
+
+  const handleMemorySubtract = () => {
+    const value = parseFloat(currentValue || displayValue);
+    if (!isNaN(value)) {
+      setMemoryValue((prev) => prev - value);
+    }
+  };
+
+  const handleMemoryRecall = () => {
+    setDisplayValue(memoryValue.toString());
+    setCurrentValue(memoryValue.toString());
+    setWaitingForOperand(false);
+  };
+
+  const handleMemoryClear = () => {
+    setMemoryValue(0);
+  };
+
   const buttons = [
-    "C", "/", "*", "-",
-    "7", "8", "9", "+",
-    "4", "5", "6",
-    "1", "2", "3",
-    "0", ".", "="
+    { label: "MC", type: "memory", handler: handleMemoryClear },
+    { label: "MR", type: "memory", handler: handleMemoryRecall },
+    { label: "M+", type: "memory", handler: handleMemoryAdd },
+    { label: "M-", type: "memory", handler: handleMemorySubtract },
+    { label: "C", type: "clear", handler: handleClearClick },
+    { label: "CE", type: "clear", handler: handleClearEntry },
+    { label: "%", type: "operator", handler: handlePercentage },
+    { label: "/", type: "operator", handler: () => handleOperatorClick("/") },
+    { label: "7", type: "digit", handler: () => handleDigitClick("7") },
+    { label: "8", type: "digit", handler: () => handleDigitClick("8") },
+    { label: "9", type: "digit", handler: () => handleDigitClick("9") },
+    { label: "*", type: "operator", handler: () => handleOperatorClick("*") },
+    { label: "4", type: "digit", handler: () => handleDigitClick("4") },
+    { label: "5", type: "digit", handler: () => handleDigitClick("5") },
+    { label: "6", type: "digit", handler: () => handleDigitClick("6") },
+    { label: "-", type: "operator", handler: () => handleOperatorClick("-") },
+    { label: "1", type: "digit", handler: () => handleDigitClick("1") },
+    { label: "2", type: "digit", handler: () => handleDigitClick("2") },
+    { label: "3", type: "digit", handler: () => handleDigitClick("3") },
+    { label: "+", type: "operator", handler: () => handleOperatorClick("+") },
+    { label: "0", type: "digit", handler: () => handleDigitClick("0") },
+    { label: ".", type: "decimal", handler: handleDecimalClick },
+    { label: "DEL", type: "backspace", handler: handleBackspace },
+    { label: "=", type: "equals", handler: handleEqualsClick },
   ];
 
   return (
@@ -157,42 +241,34 @@ export default function CalculatorPage() {
           {/* Removed CardTitle as requested */}
         </CardHeader>
         <CardContent>
-          <Input
-            type="text"
-            value={displayValue}
-            readOnly
-            className="w-full text-right text-5xl mb-6 h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4"
-          />
+          <div className="flex justify-between items-center mb-2 px-2">
+            <span className="text-sm text-muted-foreground">M: {memoryValue.toFixed(2)}</span>
+            <Input
+              type="text"
+              value={displayValue}
+              readOnly
+              className="w-full text-right text-5xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4"
+            />
+          </div>
           <div className="grid grid-cols-4 gap-3">
             {buttons.map((button) => (
               <Button
-                key={button}
+                key={button.label}
                 className={`h-20 text-2xl font-bold rounded-lg shadow-md transition-all duration-200 ease-in-out
                   ${
-                    ["+", "-", "*", "/"].includes(button)
-                      ? "bg-gray-800 text-white hover:bg-gray-700 active:scale-95" // Explicitly set for visibility
-                      : button === "="
-                      ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-95" // Distinct color for equals
-                      : button === "C"
+                    button.type === "operator"
+                      ? "bg-gray-800 text-white hover:bg-gray-700 active:scale-95"
+                      : button.type === "equals"
+                      ? "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+                      : button.type === "clear" || button.label === "DEL"
                       ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-95"
+                      : button.type === "memory"
+                      ? "bg-purple-600 text-white hover:bg-purple-700 active:scale-95" // Distinct color for memory keys
                       : "bg-secondary text-secondary-foreground hover:bg-secondary/90 active:scale-95"
-                  } 
-                  ${button === "0" ? "col-span-2" : ""}`}
-                onClick={() => {
-                  if (button === "C") {
-                    handleClearClick();
-                  } else if (["+", "-", "*", "/"].includes(button)) {
-                    handleOperatorClick(button);
-                  } else if (button === "=") {
-                    handleEqualsClick();
-                  } else if (button === ".") {
-                    handleDecimalClick();
-                  } else {
-                    handleDigitClick(button);
-                  }
-                }}
+                  }`}
+                onClick={button.handler}
               >
-                {button}
+                {button.label}
               </Button>
             ))}
           </div>
@@ -219,6 +295,7 @@ export default function CalculatorPage() {
           </ScrollArea>
         </CardContent>
       </Card>
+      <MadeWithDyad />
     </div>
   );
 }
