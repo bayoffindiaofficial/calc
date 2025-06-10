@@ -318,7 +318,7 @@ export default function CalculatorPage() {
     { label: "12% GST", handler: () => handleGSTCalculation(12) },
     { label: "18% GST", handler: () => handleGSTCalculation(18) },
     { label: "28% GST", handler: () => handleGSTCalculation(28) },
-    { label: "48% GST", handler: () => handleGSTCalculation(48) },
+    { label: "5% GST", handler: () => handleGSTCalculation(5) }, // Changed from 48% to 5%
   ];
 
   return (
