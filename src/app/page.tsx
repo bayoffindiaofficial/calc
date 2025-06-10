@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,64 +16,25 @@ export default function CalculatorPage() {
   const [calculationHistory, setCalculationHistory] = useState<string[]>([]);
   const [memoryValue, setMemoryValue] = useState<number>(0);
 
-  const handleDigitClick = (digit: string) => {
-    if (displayValue === "Error") {
-      setDisplayValue(digit);
-      setCurrentValue(digit);
-      setPreviousValue("");
-      setOperator(null);
-      setWaitingForOperand(false);
-      return;
-    }
+  // Memoize stable setters (though not strictly necessary for useCallback dependencies, good practice)
+  const setDisplayValueCallback = useCallback(setDisplayValue, []);
+  const setCurrentValueCallback = useCallback(setCurrentValue, []);
+  const setPreviousValueCallback = useCallback(setPreviousValue, []);
+  const setOperatorCallback = useCallback(setOperator, []);
+  const setWaitingForOperandCallback = useCallback(setWaitingForOperand, []);
+  const setCalculationHistoryCallback = useCallback(setCalculationHistory, []);
+  const setMemoryValueCallback = useCallback(setMemoryValue, []);
 
-    let newCurrentValue;
-    if (waitingForOperand) {
-      newCurrentValue = digit;
-      setWaitingForOperand(false);
-    } else {
-      newCurrentValue = currentValue === "0" ? digit : currentValue + digit;
-    }
-    setCurrentValue(newCurrentValue);
+  const handleClearClick = useCallback(() => {
+    setDisplayValueCallback("0");
+    setCurrentValueCallback("");
+    setPreviousValueCallback("");
+    setOperatorCallback(null);
+    setWaitingForOperandCallback(false);
+    setCalculationHistoryCallback([]); // Clear history on C
+  }, [setDisplayValueCallback, setCurrentValueCallback, setPreviousValueCallback, setOperatorCallback, setWaitingForOperandCallback, setCalculationHistoryCallback]);
 
-    // Update display to show full expression if operator is present, otherwise just the current number
-    if (operator && previousValue !== "") {
-      setDisplayValue(`${previousValue} ${operator} ${newCurrentValue}`);
-    } else {
-      setDisplayValue(newCurrentValue);
-    }
-  };
-
-  const handleDecimalClick = () => {
-    if (displayValue === "Error") {
-      setDisplayValue("0.");
-      setCurrentValue("0.");
-      setPreviousValue("");
-      setOperator(null);
-      setWaitingForOperand(false);
-      return;
-    }
-
-    let newCurrentValue;
-    if (waitingForOperand) {
-      newCurrentValue = "0."; // Start with "0." if waiting for operand
-      setWaitingForOperand(false);
-    } else if (!currentValue.includes(".")) {
-      newCurrentValue = currentValue === "" ? "0." : currentValue + ".";
-    } else {
-      // If decimal already exists and not waiting for operand, do nothing
-      return;
-    }
-    setCurrentValue(newCurrentValue);
-
-    // Construct the display string
-    if (operator && previousValue !== "") {
-      setDisplayValue(`${previousValue} ${operator} ${newCurrentValue}`);
-    } else {
-      setDisplayValue(newCurrentValue);
-    }
-  };
-
-  const performCalculation = () => {
+  const performCalculation = useCallback(() => {
     const prev = parseFloat(previousValue);
     const current = parseFloat(currentValue);
 
@@ -94,12 +55,12 @@ export default function CalculatorPage() {
         break;
         case "/":
         if (current === 0) {
-          setDisplayValue("Error");
-          setCurrentValue("");
-          setPreviousValue("");
-          setOperator(null);
-          setWaitingForOperand(false);
-          setCalculationHistory((prevHistory) => [...prevHistory, `${operationString} = Error (Division by zero)`]);
+          setDisplayValueCallback("Error");
+          setCurrentValueCallback("");
+          setPreviousValueCallback("");
+          setOperatorCallback(null);
+          setWaitingForOperandCallback(false);
+          setCalculationHistoryCallback((prevHistory) => [...prevHistory, `${operationString} = Error (Division by zero)`]);
           return;
         }
         result = prev / current;
@@ -109,101 +70,135 @@ export default function CalculatorPage() {
     }
 
     const resultString = result.toString();
-    setDisplayValue(resultString); // Display the result
-    setCurrentValue(resultString); // Set current value to result for chaining
-    setPreviousValue(""); // Clear previous
-    setOperator(null); // Clear operator
-    setWaitingForOperand(true); // Ready for next operation or new number
-    setCalculationHistory((prevHistory) => [...prevHistory, `${operationString} = ${resultString}`]);
-  };
+    setDisplayValueCallback(resultString); // Display the result
+    setCurrentValueCallback(resultString); // Set current value to result for chaining
+    setPreviousValueCallback(""); // Clear previous
+    setOperatorCallback(null); // Clear operator
+    setWaitingForOperandCallback(true); // Ready for next operation or new number
+    setCalculationHistoryCallback((prevHistory) => [...prevHistory, `${operationString} = ${resultString}`]);
+  }, [previousValue, currentValue, operator, setDisplayValueCallback, setCurrentValueCallback, setPreviousValueCallback, setOperatorCallback, setWaitingForOperandCallback, setCalculationHistoryCallback]);
 
-  const handleOperatorClick = (nextOperator: string) => {
-    if (displayValue === "Error") {
-      handleClearClick(); // Reset from error state
-      return;
-    }
 
-    // If there's a previous value, an operator, and a current value (and not waiting for operand),
-    // it means a calculation is pending. Perform it first.
-    if (previousValue && operator && currentValue && !waitingForOperand) {
-      performCalculation();
-      // After performCalculation, currentValue will hold the result, and previousValue/operator will be cleared.
-      // We then use this result as the new previousValue for the next operation.
-      setPreviousValue(currentValue);
-    } else if (currentValue !== "") {
-      // If no previous operation, but a number is typed, set it as previous.
-      setPreviousValue(currentValue);
-    } else if (previousValue === "" && currentValue === "") {
-      // If nothing is typed yet, default to 0 as previous value
-      setPreviousValue("0");
-    }
-
-    setOperator(nextOperator);
-    setDisplayValue(`${previousValue || currentValue || "0"} ${nextOperator}`); // Show the first operand and the new operator
-    setWaitingForOperand(true); // Now waiting for the second operand
-  };
-
-  const handleEqualsClick = () => {
-    if (previousValue === "" || operator === null || currentValue === "" || displayValue === "Error") return;
-    performCalculation();
-  };
-
-  const handleClearClick = () => {
-    setDisplayValue("0");
-    setCurrentValue("");
-    setPreviousValue("");
-    setOperator(null);
-    setWaitingForOperand(false);
-    setCalculationHistory([]); // Clear history on C
-  };
-
-  const handleClearEntry = () => {
-    if (displayValue === "Error") {
-      handleClearClick(); // If error, clear all
-      return;
-    }
-    // If an operator is set, clearing entry should only clear the current number, not the previous value or operator
-    if (operator && previousValue !== "") {
-      setCurrentValue("");
-      setDisplayValue(`${previousValue} ${operator}`);
-      setWaitingForOperand(true); // Still waiting for the second operand
-    } else {
-      // If no operator or previous value, clear everything like C
-      setDisplayValue("0");
-      setCurrentValue("");
-      setPreviousValue("");
-      setOperator(null);
-      setWaitingForOperand(false);
-    }
-  };
-
-  const handleBackspace = () => {
+  const handleDigitClick = useCallback((digit: string) => {
     if (displayValue === "Error") {
       handleClearClick();
       return;
     }
-    if (waitingForOperand) return; // Cannot backspace if waiting for new operand
+
+    let newCurrentValue;
+    if (waitingForOperand) {
+      newCurrentValue = digit;
+      setWaitingForOperandCallback(false);
+    } else {
+      newCurrentValue = currentValue === "0" ? digit : currentValue + digit;
+    }
+    setCurrentValueCallback(newCurrentValue);
+
+    if (operator && previousValue !== "") {
+      setDisplayValueCallback(`${previousValue} ${operator} ${newCurrentValue}`);
+    } else {
+      setDisplayValueCallback(newCurrentValue);
+    }
+  }, [displayValue, currentValue, operator, previousValue, waitingForOperand, handleClearClick, setDisplayValueCallback, setCurrentValueCallback, setWaitingForOperandCallback]);
+
+  const handleDecimalClick = useCallback(() => {
+    if (displayValue === "Error") {
+      setDisplayValueCallback("0.");
+      setCurrentValueCallback("0.");
+      setPreviousValueCallback("");
+      setOperatorCallback(null);
+      setWaitingForOperandCallback(false);
+      return;
+    }
+
+    let newCurrentValue;
+    if (waitingForOperand) {
+      newCurrentValue = "0.";
+      setWaitingForOperandCallback(false);
+    } else if (!currentValue.includes(".")) {
+      newCurrentValue = currentValue === "" ? "0." : currentValue + ".";
+    } else {
+      return;
+    }
+    setCurrentValueCallback(newCurrentValue);
+
+    if (operator && previousValue !== "") {
+      setDisplayValueCallback(`${previousValue} ${operator} ${newCurrentValue}`);
+    } else {
+      setDisplayValueCallback(newCurrentValue);
+    }
+  }, [displayValue, currentValue, operator, previousValue, waitingForOperand, setDisplayValueCallback, setCurrentValueCallback, setPreviousValueCallback, setOperatorCallback, setWaitingForOperandCallback]);
+
+  const handleOperatorClick = useCallback((nextOperator: string) => {
+    if (displayValue === "Error") {
+      handleClearClick();
+      return;
+    }
+
+    if (previousValue && operator && currentValue && !waitingForOperand) {
+      performCalculation();
+      setPreviousValueCallback(currentValue); // This will be the result from performCalculation in the next render cycle
+    } else if (currentValue !== "") {
+      setPreviousValueCallback(currentValue);
+    } else if (previousValue === "" && currentValue === "") {
+      setPreviousValueCallback("0");
+    }
+
+    setOperatorCallback(nextOperator);
+    setDisplayValueCallback(`${previousValue || currentValue || "0"} ${nextOperator}`);
+    setWaitingForOperandCallback(true);
+  }, [displayValue, previousValue, operator, currentValue, waitingForOperand, performCalculation, handleClearClick, setPreviousValueCallback, setOperatorCallback, setDisplayValueCallback, setWaitingForOperandCallback]);
+
+  const handleEqualsClick = useCallback(() => {
+    if (previousValue === "" || operator === null || currentValue === "" || displayValue === "Error") return;
+    performCalculation();
+  }, [previousValue, operator, currentValue, displayValue, performCalculation]);
+
+  const handleClearEntry = useCallback(() => {
+    if (displayValue === "Error") {
+      handleClearClick();
+      return;
+    }
+    if (operator && previousValue !== "") {
+      setCurrentValueCallback("");
+      setDisplayValueCallback(`${previousValue} ${operator}`);
+      setWaitingForOperandCallback(true);
+    } else {
+      setDisplayValueCallback("0");
+      setCurrentValueCallback("");
+      setPreviousValueCallback("");
+      setOperatorCallback(null);
+      setWaitingForOperandCallback(false);
+    }
+  }, [displayValue, operator, previousValue, setCurrentValueCallback, setDisplayValueCallback, setWaitingForOperandCallback, setPreviousValueCallback, setOperatorCallback, handleClearClick]);
+
+  const handleBackspace = useCallback(() => {
+    if (displayValue === "Error") {
+      handleClearClick();
+      return;
+    }
+    if (waitingForOperand) return;
 
     if (currentValue.length > 1) {
       const newValue = currentValue.slice(0, -1);
-      setCurrentValue(newValue);
+      setCurrentValueCallback(newValue);
       if (operator && previousValue !== "") {
-        setDisplayValue(`${previousValue} ${operator} ${newValue}`);
+        setDisplayValueCallback(`${previousValue} ${operator} ${newValue}`);
       } else {
-        setDisplayValue(newValue);
+        setDisplayValueCallback(newValue);
       }
     } else {
-      setCurrentValue("");
+      setCurrentValueCallback("");
       if (operator && previousValue !== "") {
-        setDisplayValue(`${previousValue} ${operator}`);
-        setWaitingForOperand(true); // If current value becomes empty, go back to waiting for operand
+        setDisplayValueCallback(`${previousValue} ${operator}`);
+        setWaitingForOperandCallback(true);
       } else {
-        setDisplayValue("0");
+        setDisplayValueCallback("0");
       }
     }
-  };
+  }, [displayValue, currentValue, operator, previousValue, waitingForOperand, handleClearClick, setCurrentValueCallback, setDisplayValueCallback, setWaitingForOperandCallback]);
 
-  const handlePercentage = () => {
+  const handlePercentage = useCallback(() => {
     if (displayValue === "Error") {
       handleClearClick();
       return;
@@ -211,39 +206,39 @@ export default function CalculatorPage() {
     const value = parseFloat(currentValue || displayValue);
     if (!isNaN(value)) {
       const result = value / 100;
-      setDisplayValue(result.toString());
-      setCurrentValue(result.toString());
-      setWaitingForOperand(true); // After percentage, ready for next operation
+      setDisplayValueCallback(result.toString());
+      setCurrentValueCallback(result.toString());
+      setWaitingForOperandCallback(true);
     }
-  };
+  }, [displayValue, currentValue, handleClearClick, setDisplayValueCallback, setCurrentValueCallback, setWaitingForOperandCallback]);
 
-  const handleMemoryAdd = () => {
+  const handleMemoryAdd = useCallback(() => {
     const value = parseFloat(currentValue || displayValue);
     if (!isNaN(value)) {
-      setMemoryValue((prev) => prev + value);
+      setMemoryValueCallback((prev) => prev + value);
     }
-  };
+  }, [currentValue, displayValue, setMemoryValueCallback]);
 
-  const handleMemorySubtract = () => {
+  const handleMemorySubtract = useCallback(() => {
     const value = parseFloat(currentValue || displayValue);
     if (!isNaN(value)) {
-      setMemoryValue((prev) => prev - value);
+      setMemoryValueCallback((prev) => prev - value);
     }
-  };
+  }, [currentValue, displayValue, setMemoryValueCallback]);
 
-  const handleMemoryRecall = () => {
-    setDisplayValue(memoryValue.toString());
-    setCurrentValue(memoryValue.toString());
-    setWaitingForOperand(false); // A number is now in display, not waiting for operand
-    setPreviousValue(""); // Clear previous value as this is a new starting point
-    setOperator(null); // Clear operator
-  };
+  const handleMemoryRecall = useCallback(() => {
+    setDisplayValueCallback(memoryValue.toString());
+    setCurrentValueCallback(memoryValue.toString());
+    setWaitingForOperandCallback(false);
+    setPreviousValueCallback("");
+    setOperatorCallback(null);
+  }, [memoryValue, setDisplayValueCallback, setCurrentValueCallback, setWaitingForOperandCallback, setPreviousValueCallback, setOperatorCallback]);
 
-  const handleMemoryClear = () => {
-    setMemoryValue(0);
-  };
+  const handleMemoryClear = useCallback(() => {
+    setMemoryValueCallback(0);
+  }, [setMemoryValueCallback]);
 
-  const handleGSTCalculation = (rate: number) => {
+  const handleGSTCalculation = useCallback((rate: number) => {
     if (displayValue === "Error") {
       handleClearClick();
       return;
@@ -252,12 +247,12 @@ export default function CalculatorPage() {
     if (!isNaN(value)) {
       const result = value * (1 + rate / 100);
       const operationString = `${value} + ${rate}% GST`;
-      setDisplayValue(result.toString());
-      setCurrentValue(result.toString());
-      setWaitingForOperand(true);
-      setCalculationHistory((prevHistory) => [...prevHistory, `${operationString} = ${result.toString()}`]);
+      setDisplayValueCallback(result.toString());
+      setCurrentValueCallback(result.toString());
+      setWaitingForOperandCallback(true);
+      setCalculationHistoryCallback((prevHistory) => [...prevHistory, `${operationString} = ${result.toString()}`]);
     }
-  };
+  }, [displayValue, currentValue, handleClearClick, setDisplayValueCallback, setCurrentValueCallback, setWaitingForOperandCallback, setCalculationHistoryCallback]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -270,9 +265,10 @@ export default function CalculatorPage() {
       } else if (key === '+' || key === '-' || key === '*' || key === '/') {
         handleOperatorClick(key);
       } else if (key === 'Enter') {
-        event.preventDefault(); // Prevent default form submission or other browser behavior
+        event.preventDefault();
         handleEqualsClick();
       } else if (key === 'Backspace') {
+        event.preventDefault(); // Prevent default browser back navigation
         handleBackspace();
       } else if (key === 'Escape') {
         handleClearClick();
@@ -334,7 +330,7 @@ export default function CalculatorPage() {
               <Input
                 type="text"
                 value={displayValue}
-                onChange={() => {}} // Added to resolve React controlled component warning
+                onChange={() => {}}
                 className="w-full text-right text-5xl lg:text-6xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4 text-foreground"
               />
             </div>
