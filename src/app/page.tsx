@@ -327,9 +327,9 @@ export default function CalculatorPage() {
           </CardContent>
         </Card>
 
-        <Card className="w-full max-w-[150px] shadow-xl rounded-xl border border-border flex flex-col p-4">
+        <Card className="w-full max-w-[200px] shadow-xl rounded-xl border border-border flex flex-col p-4">
           <CardTitle className="text-center text-lg font-bold text-primary-foreground bg-primary py-2 rounded-md mb-4">GST</CardTitle>
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3"> {/* Changed to grid for side-by-side */}
             {gstButtons.map((button) => (
               <Button
                 key={button.label}
