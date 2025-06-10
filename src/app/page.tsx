@@ -334,7 +334,7 @@ export default function CalculatorPage() {
                 type="text"
                 value={displayValue}
                 readOnly
-                className="w-full text-right text-5xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4 text-foreground"
+                className="w-full text-right text-5xl lg:text-6xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4 text-foreground"
               />
             </div>
             <div className="grid grid-cols-4 gap-3">
