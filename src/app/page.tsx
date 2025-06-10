@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -207,6 +207,48 @@ export default function CalculatorPage() {
     setMemoryValue(0);
   };
 
+  const handleGSTCalculation = (rate: number) => {
+    if (displayValue === "Error") {
+      handleClearClick();
+      return;
+    }
+    const value = parseFloat(currentValue || displayValue);
+    if (!isNaN(value)) {
+      const result = value * (1 + rate / 100);
+      const operationString = `${value} + ${rate}% GST`;
+      setDisplayValue(result.toString());
+      setCurrentValue(result.toString());
+      setWaitingForOperand(true);
+      setCalculationHistory((prevHistory) => [...prevHistory, `${operationString} = ${result.toString()}`]);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const { key } = event;
+
+      if (key >= '0' && key <= '9') {
+        handleDigitClick(key);
+      } else if (key === '.') {
+        handleDecimalClick();
+      } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+        handleOperatorClick(key);
+      } else if (key === 'Enter') {
+        event.preventDefault(); // Prevent default form submission or other browser behavior
+        handleEqualsClick();
+      } else if (key === 'Backspace') {
+        handleBackspace();
+      } else if (key === 'Escape') {
+        handleClearClick();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleDigitClick, handleDecimalClick, handleOperatorClick, handleEqualsClick, handleBackspace, handleClearClick]);
+
   const buttons = [
     { label: "MC", type: "memory", handler: handleMemoryClear },
     { label: "MR", type: "memory", handler: handleMemoryRecall },
@@ -216,6 +258,11 @@ export default function CalculatorPage() {
     { label: "CE", type: "clear", handler: handleClearEntry },
     { label: "%", type: "operator", handler: handlePercentage },
     { label: "/", type: "operator", handler: () => handleOperatorClick("/") },
+    { label: "0% GST", type: "gst", handler: () => handleGSTCalculation(0) },
+    { label: "9% GST", type: "gst", handler: () => handleGSTCalculation(9) },
+    { label: "12% GST", type: "gst", handler: () => handleGSTCalculation(12) },
+    { label: "18% GST", type: "gst", handler: () => handleGSTCalculation(18) },
+    { label: "28% GST", type: "gst", handler: () => handleGSTCalculation(28) },
     { label: "7", type: "digit", handler: () => handleDigitClick("7") },
     { label: "8", type: "digit", handler: () => handleDigitClick("8") },
     { label: "9", type: "digit", handler: () => handleDigitClick("9") },
@@ -247,7 +294,7 @@ export default function CalculatorPage() {
               type="text"
               value={displayValue}
               readOnly
-              className="w-full text-right text-5xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4"
+              className="w-full text-right text-5xl h-20 bg-muted-foreground/10 border-border rounded-lg shadow-inner px-4 text-foreground"
             />
           </div>
           <div className="grid grid-cols-4 gap-3">
@@ -263,9 +310,12 @@ export default function CalculatorPage() {
                       : button.type === "clear" || button.label === "DEL"
                       ? "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:scale-95"
                       : button.type === "memory"
-                      ? "bg-purple-600 text-white hover:bg-purple-700 active:scale-95" // Distinct color for memory keys
+                      ? "bg-purple-600 text-white hover:bg-purple-700 active:scale-95"
+                      : button.type === "gst"
+                      ? "bg-green-600 text-white hover:bg-green-700 active:scale-95" // Distinct color for GST keys
                       : "bg-secondary text-secondary-foreground hover:bg-secondary/90 active:scale-95"
-                  }`}
+                  }
+                  ${button.label === "0" ? "col-span-2" : ""}`}
                 onClick={button.handler}
               >
                 {button.label}
